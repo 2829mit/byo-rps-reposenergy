@@ -103,70 +103,75 @@ export const generateQuotePDF = async (data: QuoteData) => {
   doc.rect(5, 5, 200, 287); // Main border
 
   // --- HEADER ---
-  let yPos = 15;
+  // Reduced starting Y position to 10
+  let yPos = 10;
   doc.setFont("helvetica", "bold");
   doc.setFontSize(12);
   doc.text("BUSINESS PROPOSAL", 105, yPos, { align: "center" });
   doc.line(5, yPos + 2, 205, yPos + 2); 
 
-  yPos += 8;
+  yPos += 5; // Compact spacing
   
   doc.setFontSize(10);
   doc.text("Repos Energy India Private Limited", 105, yPos, { align: "center" });
   doc.setFont("helvetica", "normal");
-  doc.setFontSize(9);
-  yPos += 5;
+  doc.setFontSize(8); // Reduced address font size
+  yPos += 3.5;
   doc.text("FL No. 301, Bhuvaneshwari Apartment, Plot No. 1, S.NO. 108/1B, Aundh,", 105, yPos, { align: "center" });
-  yPos += 5;
+  yPos += 3.5;
   doc.text("Pune - 411007, Maharashtra", 105, yPos, { align: "center" });
-  yPos += 5;
+  yPos += 3.5;
   doc.text("GSTIN/UIN: 27AAICR3322D1ZO, CIN: U74999PN2017PTC170768, PAN No.: AAICR3322D", 105, yPos, { align: "center" });
   
   // Dynamic Contact Details
   const salesperson = data.customerDetails?.salesperson;
   const contactInfo = SALES_CONTACTS[salesperson] || DEFAULT_CONTACT;
   
-  yPos += 5;
+  yPos += 3.5;
+  // Make Contact line bold
+  doc.setFont("helvetica", "bold");
   doc.text(`Contact : ${contactInfo.mobile} E-Mail : ${contactInfo.email} www.reposenergy.com`, 105, yPos, { align: "center" });
+  doc.setFont("helvetica", "normal");
 
   if (logoBase64) {
-    doc.addImage(logoBase64, 'PNG', 160, 8, 35, 10);
+    doc.addImage(logoBase64, 'PNG', 160, 5, 30, 8); // Slightly smaller logo
   }
 
-  yPos += 8;
+  yPos += 4;
   doc.line(5, yPos, 205, yPos);
 
   // --- GRID SECTION ---
   const sectionTop = yPos;
   const col1X = 5;
   const col2X = 105; 
-  const rowHeight = 35;
+  const rowHeight = 20; // Reduced row height to 20mm to save space
   
   doc.line(105, sectionTop, 105, sectionTop + (rowHeight * 2));
   doc.line(105, sectionTop + rowHeight, 205, sectionTop + rowHeight);
   doc.line(5, sectionTop + (rowHeight * 2), 205, sectionTop + (rowHeight * 2));
 
   // Bill To
-  yPos = sectionTop + 5;
+  yPos = sectionTop + 3;
+  doc.setFontSize(8); // Reduced font size for grid content
   doc.setFont("helvetica", "bold");
   doc.text("Bill To", col1X + 2, yPos);
   doc.setFont("helvetica", "normal");
-  yPos += 5;
+  yPos += 3.5;
 
   const d = data.customerDetails;
   
   // Show only Name, Company, State as values (no labels)
   if (d?.name) {
     doc.text(d.name, col1X + 2, yPos);
-    yPos += 5;
+    yPos += 3.5;
   }
   if (d?.company) {
     doc.text(d.company, col1X + 2, yPos);
-    yPos += 5;
+    yPos += 3.5;
   }
   if (d?.state) {
     doc.text(d.state, col1X + 2, yPos);
-    yPos += 5;
+    yPos += 3.5;
   }
 
   // Proposal Details
@@ -184,17 +189,17 @@ export const generateQuotePDF = async (data: QuoteData) => {
   const modeText = isInstallment ? 'Easy Installments (36 Months)' : 'Outright (Full Amount)';
   
   // Reset yPos for Column 2 to align top
-  yPos = sectionTop + 5;
+  yPos = sectionTop + 3;
   doc.setFont("helvetica", "bold");
   
   // Use splitTextToSize to prevent distortion/overflow
   const proposalLabel = `Proposal No. - ${proposalNo}`;
   const splitProposal = doc.splitTextToSize(proposalLabel, 95); // max width 95
   doc.text(splitProposal, col2X + 2, yPos);
-  yPos += (splitProposal.length * 5);
+  yPos += (splitProposal.length * 3.5);
 
   doc.text(`Dated- ${proposalDate}`, col2X + 2, yPos);
-  yPos += 5;
+  yPos += 3.5;
   
   doc.setFont("helvetica", "normal");
   const paymentLabel = `Payment Mode: ${modeText}`;
@@ -202,17 +207,17 @@ export const generateQuotePDF = async (data: QuoteData) => {
   doc.text(splitPayment, col2X + 2, yPos);
 
   // Repos Account
-  yPos = sectionTop + rowHeight + 5;
+  yPos = sectionTop + rowHeight + 3;
   doc.setFont("helvetica", "bold");
   doc.text("Repos Account Details", col2X + 2, yPos);
   doc.setFont("helvetica", "normal");
-  yPos += 5;
+  yPos += 3.5;
   doc.text("Name of the Beneficiary - Repos Energy India Private Limited", col2X + 2, yPos);
-  yPos += 5;
+  yPos += 3.5;
   doc.text("Account Number: 777705029009", col2X + 2, yPos);
-  yPos += 5;
+  yPos += 3.5;
   doc.text("Bank Name: ICICI Bank Ltd", col2X + 2, yPos);
-  yPos += 5;
+  yPos += 3.5;
   doc.text("Branch: Shivajinagar, Pune IFSC Code: ICIC0000039", col2X + 2, yPos);
 
   yPos = sectionTop + (rowHeight * 2);
@@ -370,13 +375,13 @@ export const generateQuotePDF = async (data: QuoteData) => {
   });
 
   // --- DISCOUNT CALCULATION ---
-  const discountPercent = data.discountPercentage || 0;
+  const discountAmountInput = data.discountAmount || 0;
   const totalExWorks = totalRateSum;
   let discountAmount = 0;
   let netExWorks = totalExWorks;
 
-  if (discountPercent > 0) {
-    discountAmount = totalExWorks * (discountPercent / 100);
+  if (discountAmountInput > 0) {
+    discountAmount = discountAmountInput;
     netExWorks = totalExWorks - discountAmount;
   }
 
@@ -400,8 +405,8 @@ export const generateQuotePDF = async (data: QuoteData) => {
     // Summary Rows
     tableBody.push(["", "Ex-Works Total(INR)", "", "", "", formatIndianCurrency(totalExWorks)]);
     
-    if (discountPercent > 0) {
-      tableBody.push(["", `Discount (${discountPercent}%)`, "", "", "", `-${formatIndianCurrency(discountAmount)}`]);
+    if (discountAmountInput > 0) {
+      tableBody.push(["", `Discount`, "", "", "", `-${formatIndianCurrency(discountAmount)}`]);
       tableBody.push(["", "Net Ex-Works", "", "", "", formatIndianCurrency(netExWorks)]);
     }
 
@@ -414,8 +419,7 @@ export const generateQuotePDF = async (data: QuoteData) => {
     const monthlyExWorks = totalRateSum; // Monthly Rate
     
     // For installment, if discount is applied, it applies to monthly rental
-    // Recalculate based on discounted monthly
-    const monthlyDiscountAmount = monthlyExWorks * (discountPercent / 100);
+    const monthlyDiscountAmount = discountAmountInput;
     const netMonthly = monthlyExWorks - monthlyDiscountAmount;
     
     downPaymentGST = netMonthly * 36 * 0.18; // GST on total contract value (36 months) derived from net monthly
@@ -423,8 +427,8 @@ export const generateQuotePDF = async (data: QuoteData) => {
 
     tableBody.push(["", "Ex-Works Total(INR)", "", "", "", formatIndianCurrency(monthlyExWorks), ""]);
     
-    if (discountPercent > 0) {
-      tableBody.push(["", `Discount (${discountPercent}%)`, "", "", "", `-${formatIndianCurrency(monthlyDiscountAmount)}`, ""]);
+    if (discountAmountInput > 0) {
+      tableBody.push(["", `Discount`, "", "", "", `-${formatIndianCurrency(monthlyDiscountAmount)}`, ""]);
       tableBody.push(["", "Net Monthly Ex-Works", "", "", "", formatIndianCurrency(netMonthly), ""]);
     }
 
@@ -456,7 +460,7 @@ export const generateQuotePDF = async (data: QuoteData) => {
     columnStyles: columnStyles,
     didParseCell: function (data: any) {
       // Bold summary rows
-      if (data.row.index >= (tableBody.length - (discountPercent > 0 ? (isInstallment ? 5 : 5) : (isInstallment ? 3 : 3)))) {
+      if (data.row.index >= (tableBody.length - (discountAmountInput > 0 ? (isInstallment ? 5 : 5) : (isInstallment ? 3 : 3)))) {
          data.cell.styles.fontStyle = 'bold';
       }
       // Bold "Addon" classification
@@ -478,16 +482,37 @@ export const generateQuotePDF = async (data: QuoteData) => {
     finalY += 6;
   }
 
-  if (finalY < 280) {
-    doc.rect(5, finalY, 200, 287 - finalY - 5);
-    doc.line(140, finalY, 140, 287 - 5);
-    doc.setFontSize(9);
-    doc.setFont("helvetica", "italic");
-    doc.text("Note: This is a business proposal.", 7, finalY + 10);
-    doc.setFont("helvetica", "bold");
-    doc.text("For Repos Energy India Private Limited", 142, finalY + 5);
-    doc.text("Authorised Signatory", 160, 287 - 10, { align: "center" });
+  // --- FOOTER SECTION (Signature & Note) ---
+  const pageHeight = 287; // Matches the bottom border limit used elsewhere (297 - 10)
+  
+  // Ensure we have enough vertical space for the signature block.
+  // If we are too close to the bottom (e.g. > 265mm), add a new page.
+  // NOTE: Optimized for 1-page fit where possible by compressing header.
+  if (finalY > 265) {
+    doc.addPage();
+    doc.rect(5, 5, 200, 287); // Draw border on new page
+    finalY = 20; // Reset Y position near top
   }
+
+  // Draw the footer container box
+  // Box starts at finalY and extends to the bottom margin (282 = 287 - 5)
+  doc.rect(5, finalY, 200, pageHeight - finalY - 5);
+  doc.line(140, finalY, 140, pageHeight - 5); // Vertical separator
+
+  // Note Section (Left)
+  doc.setFontSize(9);
+  doc.setFont("helvetica", "italic");
+  doc.text("Note: This is a business proposal.", 7, finalY + 10);
+
+  // Signature Section (Right)
+  doc.setFont("helvetica", "bold");
+  // "For Repos..." text at the top of the signature cell
+  doc.text("For Repos Energy India Private Limited", 142, finalY + 6);
+  
+  // "Authorised Signatory" text at the bottom of the signature cell
+  // This ensures a clear gap for the signature
+  doc.text("Authorised Signatory", 170, pageHeight - 10, { align: "center" });
+
 
   // --- PAGE 2: TERMS AND CONDITIONS ---
   doc.addPage();
@@ -501,41 +526,65 @@ export const generateQuotePDF = async (data: QuoteData) => {
   doc.setFontSize(9);
   doc.setFont("helvetica", "normal");
   
+  // Helper to add a numbered point with bold title and normal content
   const addPoint = (title: string, content: string) => {
-     doc.setFont("helvetica", "bold");
-     doc.text(title, 10, tY);
-     tY += 4;
+     // Pre-calculate content height to check for page break
      doc.setFont("helvetica", "normal");
+     // Justify -> Left align to fix uneven spacing issues
      const splitText = doc.splitTextToSize(content, 185);
-     doc.text(splitText, 10, tY);
-     tY += (splitText.length * 4) + 4;
-     if (tY > 270) {
+     const lineHeight = 4;
+     const contentHeight = splitText.length * lineHeight;
+     const titleHeight = 5;
+     const gap = 4;
+     
+     // Check bounds (275 safe limit for bottom margin)
+     if (tY + titleHeight + contentHeight + gap > 275) {
          doc.addPage();
          doc.rect(5, 5, 200, 287);
          tY = 20;
      }
+
+     doc.setFont("helvetica", "bold");
+     doc.text(title, 10, tY);
+     tY += 5; // Move down for content
+
+     doc.setFont("helvetica", "normal");
+     // Justify -> Left align
+     doc.text(content, 10, tY, { maxWidth: 185, align: "left" });
+     tY += contentHeight + gap;
   };
 
   // A. USAGE
   addPoint("A. USE:", "The Repos Portable Station (“RPS”) is for internal business use of storing and dispensing high speed diesel only (in line with approval from PESO) and the RPS shall not be used for any other purpose. Customer shall not use RPS for refueling any third party vehicle or for the purpose of reselling of high speed diesel to any third party vehicle; since such use of RPS will be in contravention of Motor Spirit And High Speed Diesel (Regulation Of Supply, Distribution And Prevention Of Malpractices) Order, 2005 as amended from time to time, for which the only Customer will be liable.");
 
   // B. WORK ORDER
-  addPoint("B. WORK ORDER:", "The Customer shall place the order only in the name of Repos IoT India Private Limited (“The Company”). Any discrepancy in the name shall result in cancellation of order. Upon initiation of the work order, no modification regarding RPS variant model or any other related upgrades will be accepted.");
+  addPoint("B. WORK ORDER:", "The Customer shall place the order only in the name of Repos Energy India Private Limited (“The Company”). Any discrepancy in the name shall result in cancellation of order. Upon initiation of the work order, no modification regarding RPS variant model or any other related upgrades will be accepted.");
 
   // C. TITLE TRANSFER
-  addPoint("C. TITLE TRANSFER & DELIVERY:", "RPS shall be ready for delivery at Delivery Location (defined hereunder) within twelve (12) weeks from the date of execution of the purchase order, subject to the fulfilment of payment terms mentioned in Point D. below and prior approvals from the governmental organizations. The title of the said RPS shall stand transferred from Repos IoT India Private Limited (hereinafter referred to as \"Repos\") to the Customer upon dispatch of the said RPS from Repos' manufacturing facility situated at Chakan, Pune, Maharashtra, India. Upon such transfer of title, save and except as expressly provided herein, all obligations pertaining to the RPS shall stand transferred from Repos to the Customer, and Repos shall stand discharged from all obligations relating to the RPS, except those explicitly specified herein. Subsequent to the transfer of title, the Customer shall be solely responsible and liable for any non-compliance or deviation from the Standard Operating Procedures (SOPs), regulations promulgated by relevant authorities, and statutory compliances prescribed by the Petroleum and Explosives Safety Organization (PESO), Oil Marketing Companies (OMCs), or any other concerned regulatory or governing bodies. Repos shall, on a best effort basis, undertake the installation of the RPS within fifteen (15) business days from the date of dispatch subject to the site readiness, which timeline is indicative and shall not be construed as a mandatory obligation upon Repos.");
+  addPoint("C. TITLE TRANSFER & DELIVERY:", "RPS shall be ready for delivery at Delivery Location (defined hereunder) within twelve (12) weeks from the date of execution of the purchase order, subject to the fulfilment of payment terms mentioned in Point D. below and prior approvals from the governmental organizations. The title of the said RPS shall stand transferred from Repos Energy India Private Limited (hereinafter referred to as \"Repos\") to the Customer upon dispatch of the said RPS from Repos' manufacturing facility situated at Chakan, Pune, Maharashtra, India. Upon such transfer of title, save and except as expressly provided herein, all obligations pertaining to the RPS shall stand transferred from Repos to the Customer, and Repos shall stand discharged from all obligations relating to the RPS, except those explicitly specified herein. Subsequent to the transfer of title, the Customer shall be solely responsible and liable for any non-compliance or deviation from the Standard Operating Procedures (SOPs), regulations promulgated by relevant authorities, and statutory compliances prescribed by the Petroleum and Explosives Safety Organization (PESO), Oil Marketing Companies (OMCs), or any other concerned regulatory or governing bodies. Repos shall, on a best effort basis, undertake the installation of the RPS within fifteen (15) business days from the date of dispatch subject to the site readiness, which timeline is indicative and shall not be construed as a mandatory obligation upon Repos.");
 
   // D. PAYMENT TERMS
+  const paymentContent = "Payment shall be made by the Customer to Repos as per Table 1 mentioned hereunder. The dispatch shall be scheduled only after the complete payment is received by Repos. The said dispatch of RPS would be in accordance with Ex-Workshop (EXW) basis at Waki, Chakan Pune (Maharashtra).\n\nRepos shall make the RPS available for collection by the Buyer on an EXW basis from Repos’ facility located in Waki, Chakan, Pune, Maharashtra (\"Delivery Location\") and the Customer shall be solely responsible for all costs, risks, and liabilities associated with transportation, loading, insurance and any other expenses incurred after the goods have been made available at the Delivery Location. Upon notification of readiness for pickup, Customer shall take delivery within seven (7) days, failing which storage charges may apply at the Repos’ discretion. Title and risk in the goods shall pass to the Buyer upon collection from the Delivery Location read with Point C. TITLE TRANSFER & DELIVERY above.";
+  
+  // Calculate height for D text manually since it has Table 1 injection
+  doc.setFont("helvetica", "normal");
+  const splitPaymentText = doc.splitTextToSize(paymentContent, 185);
+  const paymentTextHeight = splitPaymentText.length * 4;
+  
+  if (tY + 4 + paymentTextHeight + 2 > 275) {
+      doc.addPage();
+      doc.rect(5, 5, 200, 287);
+      tY = 20;
+  }
+
   doc.setFont("helvetica", "bold");
   doc.text("D. PAYMENT TERMS:", 10, tY);
   tY += 4;
   doc.setFont("helvetica", "normal");
   
-  const paymentContent = "Payment shall be made by the Customer to Repos as per Table 1 mentioned hereunder. The dispatch shall be scheduled only after the complete payment is received by Repos. The said dispatch of RPS would be in accordance with Ex-Workshop (EXW) basis at Waki, Chakan Pune (Maharashtra).\n\nRepos shall make the RPS available for collection by the Buyer on an EXW basis from Repos’ facility located in Waki, Chakan, Pune, Maharashtra (\"Delivery Location\") and the Customer shall be solely responsible for all costs, risks, and liabilities associated with transportation, loading, insurance and any other expenses incurred after the goods have been made available at the Delivery Location. Upon notification of readiness for pickup, Customer shall take delivery within seven (7) days, failing which storage charges may apply at the Repos’ discretion. Title and risk in the goods shall pass to the Buyer upon collection from the Delivery Location read with Point C. TITLE TRANSFER & DELIVERY above.";
-  
-  const splitPaymentText = doc.splitTextToSize(paymentContent, 185);
-  doc.text(splitPaymentText, 10, tY);
-  tY += (splitPaymentText.length * 4) + 2;
+  // Justify -> Left align
+  doc.text(paymentContent, 10, tY, { maxWidth: 185, align: "left" });
+  tY += paymentTextHeight + 2;
 
   // Only show Table 1 if NOT installment
   if (!isInstallment) {

@@ -38,7 +38,7 @@ const App: React.FC = () => {
 
   // Discount Feature State
   const [isDiscountModalOpen, setIsDiscountModalOpen] = useState(false);
-  const [discountPercentage, setDiscountPercentage] = useState(0);
+  const [discountAmount, setDiscountAmount] = useState(0);
 
   const [paymentMode, setPaymentMode] = useState<'outright' | 'installments'>('installments');
   
@@ -171,7 +171,7 @@ const App: React.FC = () => {
     setSelectedLicenseOptions([]);
     setRfidTagsQuantity(0);
     setPaymentMode('installments');
-    setDiscountPercentage(0);
+    setDiscountAmount(0);
   };
 
   const monthlyTotalPrice = useMemo(() => {
@@ -232,7 +232,7 @@ const App: React.FC = () => {
           totalContractValue: totalContractValue,
           monthlyPrice: paymentMode === 'installments' ? displayPrice : undefined,
           rfidTagsQuantity,
-          discountPercentage,
+          discountAmount,
           configuration: {
             tank: selectedTank,
             dispensingUnits: selectedDispensingUnits,
@@ -414,15 +414,15 @@ const App: React.FC = () => {
         <div className="fixed inset-0 z-[150] flex items-center justify-center bg-black bg-opacity-60 backdrop-blur-sm p-4 animate-fade-in">
           <div className="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-sm border border-gray-100">
             <div className="mb-6">
-              <label className="block text-sm font-medium text-gray-700 mb-2">Value</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Discount Amount (INR)</label>
               <input
                 type="number"
                 min="0"
-                max="100"
-                value={discountPercentage}
-                onChange={(e) => setDiscountPercentage(Math.min(100, Math.max(0, Number(e.target.value))))}
+                value={discountAmount}
+                onChange={(e) => setDiscountAmount(Math.max(0, Number(e.target.value)))}
                 className="w-full bg-white border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-lg font-semibold"
                 autoFocus
+                placeholder="Enter discount amount"
               />
             </div>
             <div className="flex justify-end gap-3">
