@@ -150,11 +150,11 @@ export const generateQuotePDF = async (data: QuoteData) => {
   doc.line(105, sectionTop + rowHeight, 205, sectionTop + rowHeight);
   doc.line(5, sectionTop + (rowHeight * 2), 205, sectionTop + (rowHeight * 2));
 
-  // Bill To
+  // To (Formerly Bill To)
   yPos = sectionTop + 3;
   doc.setFontSize(8); // Reduced font size for grid content
   doc.setFont("helvetica", "bold");
-  doc.text("Bill To", col1X + 2, yPos);
+  doc.text("To", col1X + 2, yPos);
   doc.setFont("helvetica", "normal");
   yPos += 3.5;
 
@@ -199,12 +199,16 @@ export const generateQuotePDF = async (data: QuoteData) => {
   yPos += (splitProposal.length * 3.5);
 
   doc.text(`Dated- ${proposalDate}`, col2X + 2, yPos);
-  yPos += 3.5;
+  yPos += 6; // Increased gap between Date and Payment Mode
+  
+  // Payment Mode Label Bold
+  doc.setFont("helvetica", "bold");
+  doc.text("Payment Mode:", col2X + 2, yPos);
+  const pmLabelWidth = doc.getTextWidth("Payment Mode:");
   
   doc.setFont("helvetica", "normal");
-  const paymentLabel = `Payment Mode: ${modeText}`;
-  const splitPayment = doc.splitTextToSize(paymentLabel, 95);
-  doc.text(splitPayment, col2X + 2, yPos);
+  // Adjust position for value
+  doc.text(modeText, col2X + 2 + pmLabelWidth + 1, yPos);
 
   // Repos Account
   yPos = sectionTop + rowHeight + 3;
@@ -239,8 +243,7 @@ export const generateQuotePDF = async (data: QuoteData) => {
   const allSelectedItems: LineItem[] = [];
   
   // Base Product
-  let mainProductDesc = "Sale of Repos Portable Station\n";
-  mainProductDesc += `Model: Repos Portable Station Capacity : ${capacity} (HSD)\n`;
+  let mainProductDesc = `Repos Portable Station Capacity : ${capacity} (HSD)\n`;
   
   allSelectedItems.push({
     desc: mainProductDesc,
@@ -564,7 +567,12 @@ export const generateQuotePDF = async (data: QuoteData) => {
   addPoint("C. TITLE TRANSFER & DELIVERY:", "RPS shall be ready for delivery at Delivery Location (defined hereunder) within twelve (12) weeks from the date of execution of the purchase order, subject to the fulfilment of payment terms mentioned in Point D. below and prior approvals from the governmental organizations. The title of the said RPS shall stand transferred from Repos Energy India Private Limited (hereinafter referred to as \"Repos\") to the Customer upon dispatch of the said RPS from Repos' manufacturing facility situated at Chakan, Pune, Maharashtra, India. Upon such transfer of title, save and except as expressly provided herein, all obligations pertaining to the RPS shall stand transferred from Repos to the Customer, and Repos shall stand discharged from all obligations relating to the RPS, except those explicitly specified herein. Subsequent to the transfer of title, the Customer shall be solely responsible and liable for any non-compliance or deviation from the Standard Operating Procedures (SOPs), regulations promulgated by relevant authorities, and statutory compliances prescribed by the Petroleum and Explosives Safety Organization (PESO), Oil Marketing Companies (OMCs), or any other concerned regulatory or governing bodies. Repos shall, on a best effort basis, undertake the installation of the RPS within fifteen (15) business days from the date of dispatch subject to the site readiness, which timeline is indicative and shall not be construed as a mandatory obligation upon Repos.");
 
   // D. PAYMENT TERMS
-  const paymentContent = "Payment shall be made by the Customer to Repos as per Table 1 mentioned hereunder. The dispatch shall be scheduled only after the complete payment is received by Repos. The said dispatch of RPS would be in accordance with Ex-Workshop (EXW) basis at Waki, Chakan Pune (Maharashtra).\n\nRepos shall make the RPS available for collection by the Buyer on an EXW basis from Repos’ facility located in Waki, Chakan, Pune, Maharashtra (\"Delivery Location\") and the Customer shall be solely responsible for all costs, risks, and liabilities associated with transportation, loading, insurance and any other expenses incurred after the goods have been made available at the Delivery Location. Upon notification of readiness for pickup, Customer shall take delivery within seven (7) days, failing which storage charges may apply at the Repos’ discretion. Title and risk in the goods shall pass to the Buyer upon collection from the Delivery Location read with Point C. TITLE TRANSFER & DELIVERY above.";
+  let paymentIntro = "as per Table 1 mentioned hereunder";
+  if (isInstallment) {
+    paymentIntro = "As per the approved bank Scheduled of Disbursement";
+  }
+
+  const paymentContent = `Payment shall be made by the Customer to Repos ${paymentIntro}. The dispatch shall be scheduled only after the complete payment is received by Repos. The said dispatch of RPS would be in accordance with Ex-Workshop (EXW) basis at Waki, Chakan Pune (Maharashtra).\n\nRepos shall make the RPS available for collection by the Buyer on an EXW basis from Repos’ facility located in Waki, Chakan, Pune, Maharashtra ("Delivery Location") and the Customer shall be solely responsible for all costs, risks, and liabilities associated with transportation, loading, insurance and any other expenses incurred after the goods have been made available at the Delivery Location. Upon notification of readiness for pickup, Customer shall take delivery within seven (7) days, failing which storage charges may apply at the Repos’ discretion. Title and risk in the goods shall pass to the Buyer upon collection from the Delivery Location read with Point C. TITLE TRANSFER & DELIVERY above.`;
   
   // Calculate height for D text manually since it has Table 1 injection
   doc.setFont("helvetica", "normal");
