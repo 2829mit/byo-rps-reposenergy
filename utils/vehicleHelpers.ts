@@ -4,11 +4,11 @@ import { TankOption, AccessoryOption, DispensingUnitOption, SafetyUpgradeOption,
 
 export const getRecommendedTankId = (consumption: string): TankOption['id'] => {
   const index = CONSUMPTION_OPTIONS.indexOf(consumption);
-  if (index === 0) return '22kl'; // 50-100KL
+  if (index === 0) return '30kl'; // 50-100KL (Mapped to 30kl as 22kl is hidden)
   if (index === 1) return '30kl'; // 100-200KL
-  if (index === 2) return '45kl'; // 200-300KL
+  if (index === 2) return '60kl'; // 200-300KL (Mapped to 60kl as 45kl is hidden)
   if (index === 3) return '60kl'; // 300-1000KL
-  return '22kl';
+  return '30kl';
 };
 
 // Helper to extract priority from filename based on the new convention:

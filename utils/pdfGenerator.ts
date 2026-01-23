@@ -405,7 +405,7 @@ export const generateQuotePDF = async (data: QuoteData) => {
       tableBody.push(["", "Net Ex-Works", "", "", "", formatIndianCurrency(netExWorks)]);
     }
 
-    tableBody.push(["", "With 18%", "", "", "", formatIndianCurrency(totalIncl)]);
+    tableBody.push(["", "GST @18%", "", "", "", formatIndianCurrency(totalIncl)]);
     tableBody.push(["", "Round Off", "", "", "", "0"]);
     tableBody.push(["", "Total (INR)", "", "", "", formatIndianCurrency(totalIncl)]);
 
@@ -428,7 +428,7 @@ export const generateQuotePDF = async (data: QuoteData) => {
       tableBody.push(["", "Net Monthly Ex-Works", "", "", "", formatIndianCurrency(netMonthly), ""]);
     }
 
-    tableBody.push(["", "Down Payment (18% GST)", "", "", "", formatIndianCurrency(downPaymentGST), ""]);
+    tableBody.push(["", "Down Payment (GST @18%)", "", "", "", formatIndianCurrency(downPaymentGST), ""]);
     tableBody.push(["", "Round Off", "", "", "", "0", ""]);
     tableBody.push([
       "", 
@@ -459,6 +459,10 @@ export const generateQuotePDF = async (data: QuoteData) => {
       if (data.row.index >= (tableBody.length - (discountPercent > 0 ? (isInstallment ? 5 : 5) : (isInstallment ? 3 : 3)))) {
          data.cell.styles.fontStyle = 'bold';
       }
+      // Bold "Addon" classification
+      if (data.section === 'body' && data.column.index === 2 && data.cell.raw === 'Addon') {
+         data.cell.styles.fontStyle = 'bold';
+      }
     }
   });
 
@@ -485,41 +489,7 @@ export const generateQuotePDF = async (data: QuoteData) => {
     doc.text("Authorised Signatory", 160, 287 - 10, { align: "center" });
   }
 
-  // --- PAGE 2: STANDARD INCLUSIONS (Items with rate 0) ---
-  const includedLineItems = allSelectedItems.filter(item => item.rate === 0 && item.isAddon);
-  doc.addPage();
-  doc.rect(5, 5, 200, 287);
-  let page2Y = 20;
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(11);
-  doc.text("STANDARD INCLUSIONS", 105, page2Y, { align: 'center' });
-  doc.line(5, page2Y + 2, 205, page2Y + 2);
-  page2Y += 10;
-
-  const includedBody = includedLineItems.map((item, idx) => [
-    (idx + 1).toString(),
-    item.desc,
-    item.quantity,
-    "Included"
-  ]);
-
-  doc.autoTable({
-    startY: page2Y,
-    head: [["Sr", "Feature / Component Description", "Quantity", "Status"]],
-    body: includedBody,
-    theme: 'grid',
-    margin: { left: 15, right: 15 },
-    styles: { fontSize: 8, font: "helvetica", textColor: black },
-    headStyles: { fillColor: [240, 240, 240], textColor: black, fontStyle: 'bold' },
-    columnStyles: {
-      0: { cellWidth: 15, halign: 'center' },
-      1: { cellWidth: 'auto' },
-      2: { cellWidth: 25, halign: 'center' },
-      3: { cellWidth: 30, halign: 'center' }
-    }
-  });
-
-  // --- PAGE 3: TERMS AND CONDITIONS ---
+  // --- PAGE 2: TERMS AND CONDITIONS ---
   doc.addPage();
   doc.rect(5, 5, 200, 287);
   let tY = 20;
@@ -581,7 +551,7 @@ export const generateQuotePDF = async (data: QuoteData) => {
           startY: tY,
           head: [["Payment Schedule", "Amount"]],
           body: [
-              ["Prior Approval Application", "INR 3,00,000/-"],
+              ["Prior Approval Application", "INR 5,00,000/-"],
               ["Start of Manufacturing", "INR 20,00,000/-"],
               ["Before Dispatch", "Balance Amount"]
           ],

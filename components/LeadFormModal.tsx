@@ -7,6 +7,7 @@ import { submitLead } from '../services/api';
 interface LeadFormModalProps {
   onSubmit: (data?: CustomerDetails) => void;
   loggedInUser?: string | null;
+  initialData?: CustomerDetails | null;
 }
 
 const INDUSTRY_OPTIONS = [
@@ -36,7 +37,7 @@ const SALESPERSON_OPTIONS = [
   'Aditi Walunj'
 ];
 
-const LeadFormModal: React.FC<LeadFormModalProps> = ({ onSubmit, loggedInUser }) => {
+const LeadFormModal: React.FC<LeadFormModalProps> = ({ onSubmit, loggedInUser, initialData }) => {
   const [formData, setFormData] = useState<CustomerDetails>({
     name: '',
     mobile: '',
@@ -52,9 +53,14 @@ const LeadFormModal: React.FC<LeadFormModalProps> = ({ onSubmit, loggedInUser })
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    // If we have initial data (e.g. editing for quote), use it
+    if (initialData) {
+      setFormData(initialData);
+      return;
+    }
+
+    // Otherwise apply default logic for new form (e.g. match logged in user to salesperson)
     if (loggedInUser) {
-      // Auto-select based on first name match (case-insensitive)
-      // If loggedInUser is 'salesrepos', no match is found, so it remains empty/selectable
       const match = SALESPERSON_OPTIONS.find(opt => 
         opt.toLowerCase().startsWith(loggedInUser.toLowerCase())
       );
@@ -62,7 +68,7 @@ const LeadFormModal: React.FC<LeadFormModalProps> = ({ onSubmit, loggedInUser })
         setFormData(prev => ({ ...prev, salesperson: match }));
       }
     }
-  }, [loggedInUser]);
+  }, [loggedInUser, initialData]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;

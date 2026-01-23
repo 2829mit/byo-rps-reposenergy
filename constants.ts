@@ -1,3 +1,4 @@
+
 import type { PerformanceSpec, IotOption, TankOption, AccessoryOption, DispensingUnitOption, SafetyUpgradeOption, LicenseOption } from './types';
 
 // Removed static BASE_PRICE as it is now determined by the selected Tank
@@ -117,9 +118,9 @@ export const LICENSE_OPTIONS: LicenseOption[] = [
 ];
 
 export const TANK_OPTIONS: TankOption[] = [
-  { id: '22kl', name: '22KL', price: 99999, dimensions: '10.5 x 4.5 x 4.5 meters' },
+  // { id: '22kl', name: '22KL', price: 99999, dimensions: '10.5 x 4.5 x 4.5 meters' },
   { id: '30kl', name: '30KL', price: 119999, dimensions: '12 x 4.5 x 4.5 meters' },
-  { id: '45kl', name: '45KL', price: 129999, dimensions: '15 x 4.5 x 4.5 meters' },
+  // { id: '45kl', name: '45KL', price: 129999, dimensions: '15 x 4.5 x 4.5 meters' },
   { id: '60kl', name: '60KL', price: 139999, dimensions: '18 x 4.5 x 4.5 meters' },
 ];
 

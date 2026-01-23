@@ -11,7 +11,6 @@ import FaqPage from './components/FaqPage';
 import ReposPayPage from './components/ReposPayPage';
 import AboutUsPage from './components/AboutUsPage';
 import ComparisonModal from './components/ComparisonModal';
-import QuoteModal from './components/QuoteModal';
 import { generateQuotePDF } from './utils/pdfGenerator';
 import { logQuoteGeneration } from './services/api';
 import type { AccessoryOption, IotOption, TankOption, DispensingUnitOption, SafetyUpgradeOption, CustomerDetails, LicenseOption, QuoteData } from './types';
@@ -33,7 +32,9 @@ const App: React.FC = () => {
   
   // Modal States
   const [isComparisonModalOpen, setIsComparisonModalOpen] = useState(false);
-  const [isQuoteModalOpen, setIsQuoteModalOpen] = useState(false);
+  
+  // Track if we are waiting for lead form submission to generate a quote
+  const [pendingQuoteGeneration, setPendingQuoteGeneration] = useState(false);
 
   // Discount Feature State
   const [isDiscountModalOpen, setIsDiscountModalOpen] = useState(false);
@@ -97,17 +98,6 @@ const App: React.FC = () => {
     if (userId) setLoggedInUserId(userId);
     setIsLoginModalOpen(false);
     setIsLeadFormOpen(true);
-  };
-
-  const handleLeadFormClose = (details?: CustomerDetails) => {
-    setIsLeadFormOpen(false);
-    if (details) {
-      setCustomerDetails(details);
-      setSelectedConsumption(details.consumption);
-      
-      const recId = getRecommendedTankId(details.consumption);
-      setRecommendedTankId(recId);
-    }
   };
 
   const handleConsumptionSelect = (consumption: string) => {
@@ -222,47 +212,49 @@ const App: React.FC = () => {
 
   const showPrices = userRole === 'sales';
 
-  const handleQuoteSubmit = async (mobile: string, email: string) => {
-    setIsQuoteModalOpen(false);
+  const handleLeadFormClose = async (details?: CustomerDetails) => {
+    setIsLeadFormOpen(false);
+    
+    if (details) {
+      setCustomerDetails(details);
+      setSelectedConsumption(details.consumption);
+      
+      const recId = getRecommendedTankId(details.consumption);
+      setRecommendedTankId(recId);
 
-    const updatedCustomerDetails = {
-      ...(customerDetails || {
-        name: 'Guest User',
-        company: '',
-        industry: '',
-        state: '',
-        consumption: '',
-        salesperson: ''
-      }),
-      mobile,
-      email
-    };
+      // Check if we need to generate a quote
+      if (pendingQuoteGeneration) {
+        const quoteData: QuoteData = {
+          customerDetails: details,
+          paymentMode,
+          totalPrice: displayPrice,
+          gstAmount: gstAmount,
+          totalContractValue: totalContractValue,
+          monthlyPrice: paymentMode === 'installments' ? displayPrice : undefined,
+          rfidTagsQuantity,
+          discountPercentage,
+          configuration: {
+            tank: selectedTank,
+            dispensingUnits: selectedDispensingUnits,
+            decantation: selectedDecantation,
+            accessories: {
+              reposOs: selectedReposOsOptions,
+              mechanical: selectedMechanicalInclusionOptions,
+              safetyUnits: selectedSafetyUnits,
+              safetyUpgrades: selectedSafetyUpgrades,
+            },
+            licenses: selectedLicenseOptions,
+          }
+        };
 
-    const quoteData: QuoteData = {
-      customerDetails: updatedCustomerDetails,
-      paymentMode,
-      totalPrice: displayPrice,
-      gstAmount: gstAmount,
-      totalContractValue: totalContractValue,
-      monthlyPrice: paymentMode === 'installments' ? displayPrice : undefined,
-      rfidTagsQuantity,
-      discountPercentage,
-      configuration: {
-        tank: selectedTank,
-        dispensingUnits: selectedDispensingUnits,
-        decantation: selectedDecantation,
-        accessories: {
-          reposOs: selectedReposOsOptions,
-          mechanical: selectedMechanicalInclusionOptions,
-          safetyUnits: selectedSafetyUnits,
-          safetyUpgrades: selectedSafetyUpgrades,
-        },
-        licenses: selectedLicenseOptions,
+        await generateQuotePDF(quoteData);
+        logQuoteGeneration(quoteData);
+        setPendingQuoteGeneration(false);
       }
-    };
-
-    await generateQuotePDF(quoteData);
-    logQuoteGeneration(quoteData);
+    } else {
+      // User closed without submitting
+      setPendingQuoteGeneration(false);
+    }
   };
 
   const handleEnterApp = () => {
@@ -330,7 +322,7 @@ const App: React.FC = () => {
   return (
     <div className="min-h-screen bg-stone-50 font-sans text-gray-800 relative">
       {isLoginModalOpen && <LoginModal onLogin={handleLogin} />}
-      {isLeadFormOpen && <LeadFormModal onSubmit={handleLeadFormClose} loggedInUser={loggedInUserId} />}
+      {isLeadFormOpen && <LeadFormModal onSubmit={handleLeadFormClose} loggedInUser={loggedInUserId} initialData={customerDetails} />}
       
       <Header 
         navItems={['Home']}
@@ -404,7 +396,10 @@ const App: React.FC = () => {
               onResetConfiguration={resetConfiguration}
               
               onOpenComparison={() => setIsComparisonModalOpen(true)}
-              onOpenQuote={() => setIsQuoteModalOpen(true)}
+              onOpenQuote={() => {
+                setPendingQuoteGeneration(true);
+                setIsLeadFormOpen(true);
+              }}
               onCalculateRoi={() => setShowRoiCalculator(true)}
             />
           </div>
@@ -415,19 +410,11 @@ const App: React.FC = () => {
         <ComparisonModal onClose={() => setIsComparisonModalOpen(false)} showPrices={showPrices} />
       )}
 
-      <QuoteModal 
-        isOpen={isQuoteModalOpen} 
-        onClose={() => setIsQuoteModalOpen(false)} 
-        onSubmit={handleQuoteSubmit}
-        initialDetails={customerDetails}
-      />
-
       {isDiscountModalOpen && (
         <div className="fixed inset-0 z-[150] flex items-center justify-center bg-black bg-opacity-60 backdrop-blur-sm p-4 animate-fade-in">
           <div className="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-sm border border-gray-100">
-            <h3 className="text-xl font-bold mb-6 text-gray-900 border-b pb-2">Discount</h3>
             <div className="mb-6">
-              <label className="block text-sm font-medium text-gray-700 mb-2">Percentage</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Value</label>
               <input
                 type="number"
                 min="0"
